@@ -13,7 +13,7 @@
 ### 使用方法  
 环境: linux  
 获取方法:git clone https://github.com/WhiteNotWolf/Network_Traffic_Analyse.git  
-编译:g++ -o main main.cpp -lpthread -lpcap
+编译:g++ -o main main.cpp -lpthread -lpcap  
 运行:sudo ./main+运行时间+过滤规则,如sudo ./main 10 less 1000,监听10秒钟内数据大小小于1000的数据包。
 
 ### tips 
