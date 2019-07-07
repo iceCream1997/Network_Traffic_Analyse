@@ -13,10 +13,7 @@ using namespace std;
 
 char *local_ip;
 
-typedef struct _argument{
-    pcap_t *handle;
-    HASH_TABLE *wr;
-}argument;
+bool flag = false;
 
 /* 子线程运行函数 */
 void write_hash(argument *argv){
@@ -26,19 +23,34 @@ void write_hash(argument *argv){
     
     pcap_t *handle = argv->handle;
 
-    printf("\ttime\t\tlength\t协议类型\t源IP\t\t目的IP\t\t源端口\t目的端口\tstat\n");
+
     pcap_loop(handle, -1, packet_handler, NULL);
+
 
 }
 
 void read_hash(argument *argv){
     //使自身变成非阻塞线程
     pthread_detach(pthread_self());
+    printf("\ttime\t\tlength\t协议类型\t源IP\t\t目的IP\t\t源端口\t目的端口\tstat\n");
     while(1){
-        if(argv->handle == NULL)
+        if(flag)
             break;
+        ma.lock();
+        if(!data_hash.table.empty()){
+            HASH_NODE ou = data_hash.table.front();
+            cout<<ou.catch_time<<"\t"
+                <<ou.packet_len<<"\t"
+                <<ou.name<<"\t\t"
+                <<ou.src_ip_addr<<"\t"
+                <<ou.dest_ip_addr<<"\t"
+                <<ou.src_port<<"\t"
+                <<ou.dest_port<<"\t\t"
+                <<ou.stat<<endl;
+            data_hash.table.pop_front();
+        }
+        ma.unlock();
         
-     //cout<<"1"<<endl;
     }
 
 
@@ -89,7 +101,7 @@ void run(const char packet_filter[50],int run_time){
     /* 跳转到选中的适配器 */
     //for(dev = alldevs, i=0; i < num-1 ;dev = dev->next, i++);
     dev = alldevs;
-    //dev = dev->next;
+    dev = dev->next;
     /* 获得本地IP */
     struct pcap_addr *addr = dev->addresses;
     struct sockaddr_in *sin;
@@ -169,16 +181,14 @@ void run(const char packet_filter[50],int run_time){
     sleep(run_time);
     /* 关闭处理 */
     pcap_close(devHandler);
+
+    ma.lock();
+    flag = true;
+    ma.unlock();
+
     printf("\n\t\t---抓取结束---\n\n");
-    cout<<devHandler<<endl;
-    /* 根据输入协议名查看流量 */
-    printf("目前支持的协议:");
-    int j;
-    for(j = 0;j < PROTOCOL_COUNT;j++){
-        cout<<protocols[j]<<"\t";
-    }
-    printf("\n");
-    getchar();
-    
+    printf("结果:\n");
+    printf("总数据包数目:%d,其中TCP数据包%d个，UDP数据包%d个！\n",data_hash.packetnum,data_hash.tcpnum,data_hash.udpnum);
+    printf("总数据大小:%d\n",data_hash.datasize);           
 }
     

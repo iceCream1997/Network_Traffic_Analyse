@@ -14,6 +14,11 @@
 
 using namespace std;
 
+typedef struct _argument{
+    pcap_t *handle;
+    HASH_TABLE *wr;
+}argument;
+
 
 //抓取到的第一个包的时间
 time_t first_catch_time;
@@ -48,6 +53,7 @@ void packet_handler(u_char *param, const struct pcap_pkthdr *header,
     time_t local_tv_sec;
     static int id = 0;
 
+
     //将时间戳转换成可识别的格式
     local_tv_sec = header->ts.tv_sec;
     _tm = *localtime(&local_tv_sec);
@@ -61,38 +67,11 @@ void packet_handler(u_char *param, const struct pcap_pkthdr *header,
     }
     last_catch_time = local_tv_sec;
 
-    /* 屏幕输出 */
-    //len表示数据包的实际长度
-    //printf("-------------------------------------------\n\n");
-   // printf("%d\t%s\t%d\t", ++id, time, header->len);
-    // int i = 0;
-    // for(i = 0;i < header->len;i++){
-    //     if(isprint(packet_data[i])){
-    //         printf("%c", packet_data[i]);
-    //     }else{
-    //         printf(". ");
-    //     }
-    //     if((i%16 == 0 && i != 0) || i == header->len-1){
-    //         printf("\n\t\t\t\t\t");
-    //     }
-    // }
-    //printf("\n");
+
 
     ETHERNET_HEADER *ether;
     ether = (ETHERNET_HEADER *)(packet_data);
-    // printf("\t%.2x:%.2x:%.2x:%.2x:%.2x:%.2x -> %.2x:%.2x:%.2x:%.2x:%.2x:%.2x\n\n",
-    //        ether->host_src[0],
-    //        ether->host_src[1],
-    //        ether->host_src[2],
-    //        ether->host_src[3],
-    //        ether->host_src[4],
-    //        ether->host_src[5],
-    //        ether->host_dest[0],
-    //        ether->host_dest[1],
-    //        ether->host_dest[2],
-    //        ether->host_dest[3],
-    //        ether->host_dest[4],
-    //        ether->host_dest[5]);
+
 
     /* 数据包解析 */
     parse(packet_data, time, header->len,id);
@@ -102,7 +81,7 @@ void packet_handler(u_char *param, const struct pcap_pkthdr *header,
 
 /* 解析数据包 */
 void parse(const u_char *packet_data, char *catch_time, int packet_size,int out_id){
-    /* 获得IP数据包头部 */
+/* 获得IP数据包头部 */
     IP_HEADER *ip;
     unsigned int protocol;
     unsigned int ip_head_len;
@@ -219,22 +198,46 @@ void parse(const u_char *packet_data, char *catch_time, int packet_size,int out_
 
     writeFile(sequence, ack, flag_str, src_ip, dest_ip,
               src_port, dest_port, pro_name, data_len);
-    //打印IP
+ 
     //printf("%d\t%s\t%d\t", out_id, time, packet_size);
-    printf("%s\t%d\t%s\t  %d.%d.%d.%d -> %d.%d.%d.%d\t%d\t%d\t\t",catch_time, packet_size,pro_name,
-            ip->src_ip_address.byte1,
-            ip->src_ip_address.byte2,
-            ip->src_ip_address.byte3,
-            ip->src_ip_address.byte4,
-            ip->dest_ip_address.byte1,
-            ip->dest_ip_address.byte2,
-            ip->dest_ip_address.byte3,
-            ip->dest_ip_address.byte4,
-            src_port,
-            dest_port,
-            stat);
-    cout<<stat<<endl;
+    // printf("%s\t%d\t%s\t  %d.%d.%d.%d -> %d.%d.%d.%d\t%d\t%d\t\t",catch_time, packet_size,pro_name,
+    //         ip->src_ip_address.byte1,
+    //         ip->src_ip_address.byte2,
+    //         ip->src_ip_address.byte3,
+    //         ip->src_ip_address.byte4,
+    //         ip->dest_ip_address.byte1,
+    //         ip->dest_ip_address.byte2,
+    //         ip->dest_ip_address.byte3,
+    //         ip->dest_ip_address.byte4,
+    //         src_port,
+    //         dest_port,
+    //         stat);
+    // cout<<stat<<endl;
 
+    HASH_NODE temp;
+    temp.catch_time = catch_time;
+    temp.packet_len = packet_size;
+    temp.name = pro_name;
+    temp.src_ip_addr = src_ip;
+    temp.dest_ip_addr = dest_ip;
+    temp.src_port = src_port;
+    temp.dest_port = dest_port;
+    temp.stat = stat;
+
+    ma.lock();
+
+    data_hash.table.push_back(temp);
+    if(temp.name == "TCP")
+        data_hash.tcpnum++;
+    if(temp.name == "UDP")
+        data_hash.udpnum++;
+    
+    data_hash.packetnum++;
+    data_hash.datasize += temp.packet_len;
+
+    ma.unlock();
+    
+    
 }
 
 

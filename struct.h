@@ -1,5 +1,6 @@
 #include <time.h>
 #include <list>
+#include <mutex>
 
 //以太网报头
 typedef struct ethernet_header{
@@ -87,14 +88,14 @@ typedef struct udp_header{
 typedef struct hash_node{
 
     //便于比较
-    char src_ip_addr[50];                       //源IP
-    char dest_ip_addr[50];                      //目的IP
+    string src_ip_addr;                       //源IP
+    string dest_ip_addr;                      //目的IP
     unsigned short src_port;                    //源端口号
     unsigned short dest_port;                   //目的端口号
-    time_t catch_time;                          //数据包捕获时间
+    string catch_time;                          //数据包捕获时间
     unsigned int packet_len;                    //数据包长度(包含首部)
-    struct Node *next;
     string stat;
+    string name;
 
 }HASH_NODE;
 
@@ -102,8 +103,13 @@ typedef struct hash_node{
 //hash表
 typedef struct hash_table{
     list<HASH_NODE> table;
-    static int packetnum;
-    static int udpnum;
-    static int tcpnum;
-    static int datasize;
+    int packetnum;
+    int udpnum;
+    int tcpnum;
+    int datasize;
 }HASH_TABLE;
+
+
+mutex ma;
+
+HASH_TABLE data_hash;
