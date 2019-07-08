@@ -101,7 +101,7 @@ void run(const char packet_filter[50],int run_time){
     /* 跳转到选中的适配器 */
     //for(dev = alldevs, i=0; i < num-1 ;dev = dev->next, i++);
     dev = alldevs;
-    dev = dev->next;
+    //dev = dev->next;
     /* 获得本地IP */
     struct pcap_addr *addr = dev->addresses;
     struct sockaddr_in *sin;
@@ -163,7 +163,7 @@ void run(const char packet_filter[50],int run_time){
     printf("抓取时长：%d s\n", run_time);
     //argument结构体传入
     
-    printf("\n正在监听:%s...\n", dev->description);
+    //printf("\n正在监听:%s...\n", dev->description);
 
     /* 释放设备列表 */
     pcap_freealldevs(alldevs);
